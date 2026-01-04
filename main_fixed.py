@@ -72,8 +72,8 @@ def find_marks(image, answer_key=None, debug_mode=False, custom_regions=None):
         else:
             answer_key = ANSWER_KEYS["default"]
     
-    answers, multiple_marks = functions.read_answers(warped, TOTAL_QUESTIONS, CHOICES, QUESTIONS_PER_COLUMN)
-    results = functions.grade_answers(answers, answer_key, TOTAL_QUESTIONS, multiple_marks)
+    answers = functions.read_answers(warped, TOTAL_QUESTIONS, CHOICES, QUESTIONS_PER_COLUMN)
+    results = functions.grade_answers(answers, answer_key, TOTAL_QUESTIONS)
     
     correct_count = sum(results['grading'][:TOTAL_QUESTIONS])
     total_marks = MARKS_PER_QUESTION * TOTAL_QUESTIONS
@@ -88,8 +88,7 @@ def find_marks(image, answer_key=None, debug_mode=False, custom_regions=None):
         answer_key,
         TOTAL_QUESTIONS,
         CHOICES,
-        QUESTIONS_PER_COLUMN,
-        multiple_marks
+        QUESTIONS_PER_COLUMN
     )
     
     result_info = {
@@ -101,8 +100,7 @@ def find_marks(image, answer_key=None, debug_mode=False, custom_regions=None):
         'total_marks': total_marks,
         'percentage': percentage,
         'grade': grade,
-        'grading': results['grading'][:TOTAL_QUESTIONS],
-        'multiple_marks': multiple_marks
+        'grading': results['grading'][:TOTAL_QUESTIONS]
     }
     
     if custom_regions:
@@ -126,7 +124,7 @@ st.set_page_config(
 style.apply_styling()
 
 # Tab selection
-tab1, tab2, tab3 = st.tabs(["📝 Chấm Điểm", "📷 Webcam", "🔧 Debug Vùng"])
+tab1, tab2 = st.tabs(["📝 Chấm Điểm", "🔧 Debug Vùng"])
 
 # ============== TAB 1: CHẤM ĐIỂM ==============
 with tab1:
@@ -206,12 +204,8 @@ with tab1:
                     st.progress(result_info['percentage'] / 100)
                     st.write(f"**Phần trăm:** {result_info['percentage']:.1f}%")
                     
-                    # Cảnh báo nếu có câu tô nhiều
-                    if result_info['multiple_marks']:
-                        st.warning(f"⚠️ **Phát hiện {len(result_info['multiple_marks'])} câu có tô nhiều đáp án:** {', '.join([f'Câu {q+1}' for q in result_info['multiple_marks']])}")
-                    
                     with st.expander("📋 Chi tiết câu trả lời", expanded=False):
-                        answer_mapping = {0: 'A', 1: 'B', 2: 'C', 3: 'D', -1: '⚠️ Trống', -2: '⚠️ Tô nhiều'}
+                        answer_mapping = {0: 'A', 1: 'B', 2: 'C', 3: 'D', -1: '⚠️ Trống'}
                         key_to_use = custom_key if custom_key else ANSWER_KEYS.get(ma_de, ANSWER_KEYS["default"])
                         
                         cols = st.columns(4)
@@ -230,158 +224,16 @@ with tab1:
                                         status = "✅" if correct else "❌"
                                         correct_ans = answer_mapping.get(key_to_use[i], '?')
                                         student_ans = answer_mapping.get(ans, '?')
-                                        
-                                        # Thêm dấu cảnh báo nếu tô nhiều
-                                        if i in result_info['multiple_marks']:
-                                            st.write(f"{i+1}. **{student_ans}** ⚠️ (Tô nhiều) - {correct_ans}")
-                                        else:
-                                            st.write(f"{i+1}. {student_ans} {status} ({correct_ans})")
+                                        st.write(f"{i+1}. {student_ans} {status} ({correct_ans})")
                 else:
                     st.error("❌ Không thể detect phiếu. Vui lòng kiểm tra lại ảnh.")
 
-# ============== TAB 2: WEBCAM CHỤP TỨC THỜI ==============
+# ============== TAB 2: DEBUG VÙNG ==============
 with tab2:
-    st.title("📷 Chụp Phiếu Bằng Webcam")
-    st.write("Chụp phiếu bằng webcam và auto detect kết quả ngay lập tức.")
-    
-    with st.sidebar:
-        st.header("⚙️ Cấu hình Webcam")
-        st.write(f"**Số câu hỏi:** {TOTAL_QUESTIONS}")
-        st.write(f"**Số lựa chọn:** {CHOICES} (A, B, C, D)")
-        
-        st.divider()
-        debug_mode_cam = st.checkbox("🔍 Hiển thị vùng detect (Debug) - Webcam", value=False)
-        
-        st.divider()
-        st.subheader("📋 Nhập đáp án (tùy chọn)")
-        custom_answer_cam = st.text_area(
-            "Đáp án (A/B/C/D, cách nhau bởi dấu phẩy) - Webcam:",
-            placeholder="A, D, C, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, B, A, A, A, A, A, A, A, A, A, A, A, A, D, A, A",
-            help="Nhập 35 đáp án, mỗi đáp án là A, B, C hoặc D",
-            key="webcam_answer"
-        )
-        
-        st.divider()
-        auto_detect = st.checkbox("⚡ Auto Detect Khi Chụp", value=True, help="Tự động chấm điểm ngay sau khi chụp ảnh")
-    
-    # Hướng dẫn sử dụng
-    st.info("""
-    📋 **Hướng Dẫn:**
-    1. Nhấn nút **"Take a picture"** để chụp ảnh phiếu
-    2. Căn thẳng phiếu, ánh sáng tốt (góc 0-20°)
-    3. Nếu bật **Auto Detect**, hệ thống sẽ tự động chấm điểm
-    4. Xem kết quả bên dưới
-    
-    💡 **Mẹo:**
-    - Chụp từ khoảng cách ~30-40cm
-    - Ánh sáng từ trên xuống (tránh bóng)
-    - Toàn bộ phiếu phải có trong khung hình
-    """)
-    
-    # Chụp ảnh từ webcam
-    camera_image = st.camera_input("📷 Chụp ảnh phiếu")
-    
-    if camera_image is not None:
-        # Đọc ảnh từ camera
-        image_cam = Image.open(camera_image)
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.subheader("📷 Ảnh Chụp")
-            st.image(image_cam, use_container_width=True)
-        
-        # Auto detect nếu bật
-        if auto_detect:
-            st.subheader("⏳ Đang xử lý...")
-            
-            custom_key_cam = None
-            if custom_answer_cam.strip():
-                try:
-                    mapping = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
-                    parts = [p.strip().upper() for p in custom_answer_cam.split(',')]
-                    if len(parts) >= TOTAL_QUESTIONS:
-                        custom_key_cam = [mapping.get(p, 0) for p in parts[:TOTAL_QUESTIONS]]
-                except:
-                    st.warning("Đáp án không hợp lệ, sử dụng đáp án mặc định.")
-            
-            result_image_cam, warped_cam, result_info_cam, ma_de_cam, debug_image_cam = find_marks(
-                image_cam, custom_key_cam, debug_mode_cam
-            )
-            
-            if result_image_cam is not None:
-                with col2:
-                    if debug_mode_cam and debug_image_cam is not None:
-                        st.subheader("🔍 Vùng Detect")
-                        st.image(cv2.cvtColor(debug_image_cam, cv2.COLOR_BGR2RGB), use_container_width=True)
-                        st.caption("🔵 Mã đề | 🟢 Q1-10 | 🟡 Q11-20 | 🟣 Q21-30 | 🟠 Q31-40")
-                    else:
-                        st.subheader("📄 Ảnh Xử Lý")
-                        st.image(cv2.cvtColor(warped_cam, cv2.COLOR_BGR2RGB), use_container_width=True)
-                
-                with col3:
-                    st.subheader("✅ Kết Quả")
-                    st.image(cv2.cvtColor(result_image_cam, cv2.COLOR_BGR2RGB), use_container_width=True)
-                
-                st.divider()
-                st.subheader("📊 Kết Quả Chi Tiết")
-                
-                col_a, col_b, col_c, col_d = st.columns(4)
-                with col_a:
-                    st.metric("📝 Mã đề", ma_de_cam)
-                with col_b:
-                    st.metric("✓ Số câu đúng", f"{result_info_cam['correct_count']}/{result_info_cam['total_questions']}")
-                with col_c:
-                    st.metric("📊 Điểm", f"{result_info_cam['marks_obtained']}/{result_info_cam['total_marks']}")
-                with col_d:
-                    st.metric("🏆 Xếp loại", result_info_cam['grade'])
-                
-                st.progress(result_info_cam['percentage'] / 100)
-                st.write(f"**Phần trăm:** {result_info_cam['percentage']:.1f}%")
-                
-                # Cảnh báo nếu có câu tô nhiều
-                if result_info_cam['multiple_marks']:
-                    st.warning(f"⚠️ **Phát hiện {len(result_info_cam['multiple_marks'])} câu có tô nhiều đáp án:** {', '.join([f'Câu {q+1}' for q in result_info_cam['multiple_marks']])}")
-                
-                with st.expander("📋 Chi tiết câu trả lời", expanded=False):
-                    answer_mapping = {0: 'A', 1: 'B', 2: 'C', 3: 'D', -1: '⚠️ Trống', -2: '⚠️ Tô nhiều'}
-                    key_to_use = custom_key_cam if custom_key_cam else ANSWER_KEYS.get(ma_de_cam, ANSWER_KEYS["default"])
-                    
-                    cols = st.columns(4)
-                    col_labels = ["Câu 1-10", "Câu 11-20", "Câu 21-30", "Câu 31-35"]
-                    
-                    for col_idx, col in enumerate(cols):
-                        with col:
-                            st.write(f"**{col_labels[col_idx]}**")
-                            start = col_idx * 10
-                            end = min(start + 10, TOTAL_QUESTIONS)
-                            
-                            for i in range(start, end):
-                                if i < len(result_info_cam['answers']):
-                                    ans = result_info_cam['answers'][i]
-                                    correct = result_info_cam['grading'][i] == 1
-                                    status = "✅" if correct else "❌"
-                                    correct_ans = answer_mapping.get(key_to_use[i], '?')
-                                    student_ans = answer_mapping.get(ans, '?')
-                                    
-                                    if i in result_info_cam['multiple_marks']:
-                                        st.write(f"{i+1}. **{student_ans}** ⚠️ (Tô nhiều) - {correct_ans}")
-                                    else:
-                                        st.write(f"{i+1}. {student_ans} {status} ({correct_ans})")
-            else:
-                st.error("❌ Không thể detect phiếu. Vui lòng:")
-                st.write("""
-                - Chụp lại với ánh sáng tốt hơn
-                - Chụp góc lệch < 30°
-                - Đảm bảo toàn bộ phiếu trong khung hình
-                - Chụp ảnh rõ ràng (không bị mơ)
-                """)
-
-# ============== TAB 3: DEBUG VÙNG ==============
-with tab3:
     st.title("🔧 Debug và Điều Chỉnh Vùng Detect")
     st.write("Sử dụng sliders để điều chỉnh tọa độ các vùng detect. Xem preview real-time bên dưới.")
     
-    uploaded_file_debug = st.file_uploader("📤 Chọn ảnh phiếu...", type=["jpg", "jpeg", "png"], key="tab3")
+    uploaded_file_debug = st.file_uploader("📤 Chọn ảnh phiếu...", type=["jpg", "jpeg", "png"], key="tab2")
     
     if uploaded_file_debug is not None:
         image_debug = Image.open(uploaded_file_debug)
