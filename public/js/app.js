@@ -173,9 +173,6 @@ function displayResults(data) {
     if (data.warped_image) {
         document.getElementById('originalImage').src = data.warped_image;
     }
-    if (data.debug_image) {
-        document.getElementById('debugImage').src = data.debug_image;
-    }
     if (data.result_image) {
         document.getElementById('resultImage').src = data.result_image;
     }

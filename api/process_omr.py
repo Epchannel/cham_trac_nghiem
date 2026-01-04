@@ -132,6 +132,28 @@ def draw_answer_results(img, answers, grading, answer_key, multiple_marks, ma_de
     result = img.copy()
     h, w = result.shape[:2]
     
+    # Vẽ các khung vùng detect trước
+    regions = [
+        (functions.MA_DE_REGION, (255, 0, 0), "MA DE", 2),
+        (functions.QUESTIONS_1_10, (0, 255, 0), "C1-C10", 2),
+        (functions.QUESTIONS_11_20, (0, 255, 255), "C11-C20", 2),
+        (functions.QUESTIONS_21_30, (255, 0, 255), "C21-C30", 2),
+        (functions.QUESTIONS_31_40, (0, 165, 255), "C31-C35", 2),
+    ]
+    
+    for region, color, label, thickness in regions:
+        x1 = int(w * region['x_start'])
+        y1 = int(h * region['y_start'])
+        x2 = int(w * region['x_end'])
+        y2 = int(h * region['y_end'])
+        
+        # Vẽ hình chữ nhật
+        cv2.rectangle(result, (x1, y1), (x2, y2), color, thickness)
+        
+        # Vẽ label ở bên trên bên ngoài khung
+        cv2.putText(result, label, (x1, y1 - 5), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+    
     # Helper function để get tọa độ cell
     def get_cell_center(region, row, col, num_rows, num_cols):
         x1 = int(w * region['x_start'])

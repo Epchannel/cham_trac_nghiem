@@ -345,10 +345,10 @@ def draw_debug_regions(img):
     
     regions = [
         (MA_DE_REGION, (255, 0, 0), "MA DE"),
-        (QUESTIONS_1_10, (0, 255, 0), "Q1-10"),
-        (QUESTIONS_11_20, (0, 255, 255), "Q11-20"),
-        (QUESTIONS_21_30, (255, 0, 255), "Q21-30"),
-        (QUESTIONS_31_40, (0, 165, 255), "Q31-35"),
+        (QUESTIONS_1_10, (0, 255, 0), "C1-C10"),
+        (QUESTIONS_11_20, (0, 255, 255), "C11-C20"),
+        (QUESTIONS_21_30, (255, 0, 255), "C21-C30"),
+        (QUESTIONS_31_40, (0, 165, 255), "C31-C35"),
     ]
     
     for region, color, label in regions:
@@ -357,7 +357,7 @@ def draw_debug_regions(img):
         x2, y2 = coords['x_end'], coords['y_end']
         
         cv2.rectangle(result, (x1, y1), (x2, y2), color, 2)
-        cv2.putText(result, label, (x1 + 5, y1 + 20), 
+        cv2.putText(result, label, (x1, y1 - 5), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
     
     return result
