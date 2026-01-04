@@ -1,5 +1,7 @@
 // Global state
 let selectedFile = null;
+let cameraStream = null;
+let currentMode = 'upload'; // 'upload' or 'camera'
 
 // DOM Elements
 const uploadArea = document.getElementById('uploadArea');
@@ -13,6 +15,20 @@ const resultsSection = document.getElementById('resultsSection');
 const errorSection = document.getElementById('errorSection');
 const customAnswerKey = document.getElementById('customAnswerKey');
 
+// Camera Elements
+const btnUploadMode = document.getElementById('btnUploadMode');
+const btnCameraMode = document.getElementById('btnCameraMode');
+const uploadMode = document.getElementById('uploadMode');
+const cameraMode = document.getElementById('cameraMode');
+const cameraVideo = document.getElementById('cameraVideo');
+const cameraCanvas = document.getElementById('cameraCanvas');
+const btnStartCamera = document.getElementById('btnStartCamera');
+const btnCapture = document.getElementById('btnCapture');
+const btnStopCamera = document.getElementById('btnStopCamera');
+const capturedPreview = document.getElementById('capturedPreview');
+const capturedImg = document.getElementById('capturedImg');
+const btnRemoveCaptured = document.getElementById('btnRemoveCaptured');
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
@@ -21,6 +37,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Setup Event Listeners
 function setupEventListeners() {
+    // Mode toggle
+    btnUploadMode.addEventListener('click', () => switchMode('upload'));
+    btnCameraMode.addEventListener('click', () => switchMode('camera'));
+    
     // Upload area click
     uploadArea.addEventListener('click', () => fileInput.click());
     
@@ -34,6 +54,12 @@ function setupEventListeners() {
     
     // Remove image
     btnRemove.addEventListener('click', removeImage);
+    
+    // Camera controls
+    btnStartCamera.addEventListener('click', startCamera);
+    btnCapture.addEventListener('click', captureImage);
+    btnStopCamera.addEventListener('click', stopCamera);
+    btnRemoveCaptured.addEventListener('click', removeCaptured);
     
     // Process button
     btnProcess.addEventListener('click', processOMR);
@@ -116,6 +142,123 @@ function removeImage() {
     imagePreview.style.display = 'none';
     btnProcess.disabled = true;
 }
+
+// ==================== CAMERA FUNCTIONS ====================
+
+// Switch mode between upload and camera
+function switchMode(mode) {
+    currentMode = mode;
+    
+    if (mode === 'upload') {
+        btnUploadMode.classList.add('active');
+        btnCameraMode.classList.remove('active');
+        uploadMode.style.display = 'block';
+        cameraMode.style.display = 'none';
+        stopCamera();
+    } else {
+        btnCameraMode.classList.add('active');
+        btnUploadMode.classList.remove('active');
+        cameraMode.style.display = 'block';
+        uploadMode.style.display = 'none';
+        removeImage();
+    }
+    
+    // Reset results
+    resultsSection.style.display = 'none';
+    errorSection.style.display = 'none';
+}
+
+// Start camera
+async function startCamera() {
+    try {
+        // Request camera access with high resolution
+        const constraints = {
+            video: {
+                width: { ideal: 1920 },
+                height: { ideal: 1080 },
+                facingMode: 'environment' // Use back camera on mobile
+            }
+        };
+        
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        cameraVideo.srcObject = cameraStream;
+        
+        // Show/hide buttons
+        btnStartCamera.style.display = 'none';
+        btnCapture.style.display = 'inline-block';
+        btnStopCamera.style.display = 'inline-block';
+        
+        console.log('Camera started successfully');
+    } catch (error) {
+        console.error('Camera error:', error);
+        showError('Không thể truy cập camera. Vui lòng kiểm tra quyền truy cập camera.');
+    }
+}
+
+// Stop camera
+function stopCamera() {
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraVideo.srcObject = null;
+        cameraStream = null;
+        
+        // Show/hide buttons
+        btnStartCamera.style.display = 'inline-block';
+        btnCapture.style.display = 'none';
+        btnStopCamera.style.display = 'none';
+        
+        console.log('Camera stopped');
+    }
+}
+
+// Capture image from camera
+function captureImage() {
+    if (!cameraStream) {
+        showError('Camera chưa được bật!');
+        return;
+    }
+    
+    // Set canvas size to match video
+    cameraCanvas.width = cameraVideo.videoWidth;
+    cameraCanvas.height = cameraVideo.videoHeight;
+    
+    // Draw video frame to canvas
+    const ctx = cameraCanvas.getContext('2d');
+    ctx.drawImage(cameraVideo, 0, 0);
+    
+    // Convert to blob
+    cameraCanvas.toBlob((blob) => {
+        if (blob) {
+            // Create file from blob
+            const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
+            selectedFile = file;
+            
+            // Show preview
+            const url = URL.createObjectURL(blob);
+            capturedImg.src = url;
+            capturedPreview.style.display = 'block';
+            
+            // Stop camera
+            stopCamera();
+            
+            // Enable process button
+            btnProcess.disabled = false;
+            
+            console.log('Image captured successfully');
+        }
+    }, 'image/jpeg', 0.95);
+}
+
+// Remove captured image
+function removeCaptured() {
+    selectedFile = null;
+    capturedImg.src = '';
+    capturedPreview.style.display = 'none';
+    btnProcess.disabled = true;
+    startCamera();
+}
+
+// ==================== END CAMERA FUNCTIONS ====================
 
 // Process OMR
 async function processOMR() {
@@ -279,6 +422,15 @@ function showError(message) {
 // Reset form
 function resetForm() {
     removeImage();
+    
+    // Also clear captured image if in camera mode
+    if (currentMode === 'camera') {
+        selectedFile = null;
+        capturedImg.src = '';
+        capturedPreview.style.display = 'none';
+        btnProcess.disabled = true;
+    }
+    
     customAnswerKey.value = '';
     resultsSection.style.display = 'none';
     errorSection.style.display = 'none';

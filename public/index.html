@@ -20,21 +20,58 @@
             <!-- Upload Section -->
             <section class="upload-section">
                 <div class="card">
-                    <h2>📤 Upload Phiếu Trắc Nghiệm</h2>
-                    
-                    <div class="upload-area" id="uploadArea">
-                        <input type="file" id="fileInput" accept="image/jpeg,image/jpg,image/png" hidden>
-                        <div class="upload-content">
-                            <div class="upload-icon">📷</div>
-                            <p class="upload-text">Kéo thả ảnh vào đây hoặc click để chọn file</p>
-                            <p class="upload-hint">Chấp nhận: JPG, JPEG, PNG (tối đa 10MB)</p>
+                    <!-- Mode Toggle -->
+                    <div class="mode-toggle">
+                        <button class="mode-btn active" id="btnUploadMode">📤 Upload File</button>
+                        <button class="mode-btn" id="btnCameraMode">📷 Camera</button>
+                    </div>
+
+                    <!-- Upload Mode -->
+                    <div id="uploadMode" class="mode-content">
+                        <h2>📤 Upload Phiếu Trắc Nghiệm</h2>
+                        
+                        <div class="upload-area" id="uploadArea">
+                            <input type="file" id="fileInput" accept="image/jpeg,image/jpg,image/png" hidden>
+                            <div class="upload-content">
+                                <div class="upload-icon">📷</div>
+                                <p class="upload-text">Kéo thả ảnh vào đây hoặc click để chọn file</p>
+                                <p class="upload-hint">Chấp nhận: JPG, JPEG, PNG (tối đa 10MB)</p>
+                            </div>
+                        </div>
+
+                        <!-- Preview Image -->
+                        <div id="imagePreview" class="image-preview" style="display: none;">
+                            <img id="previewImg" src="" alt="Preview">
+                            <button class="btn-remove" id="btnRemove">✖ Xóa ảnh</button>
                         </div>
                     </div>
 
-                    <!-- Preview Image -->
-                    <div id="imagePreview" class="image-preview" style="display: none;">
-                        <img id="previewImg" src="" alt="Preview">
-                        <button class="btn-remove" id="btnRemove">✖ Xóa ảnh</button>
+                    <!-- Camera Mode -->
+                    <div id="cameraMode" class="mode-content" style="display: none;">
+                        <h2>📷 Quét Từ Camera</h2>
+                        
+                        <div class="camera-container">
+                            <video id="cameraVideo" autoplay playsinline></video>
+                            <canvas id="cameraCanvas" style="display: none;"></canvas>
+                            
+                            <div class="camera-overlay">
+                                <div class="camera-guide">
+                                    <p>📋 Đặt phiếu trắc nghiệm vào khung</p>
+                                </div>
+                            </div>
+                            
+                            <div class="camera-controls">
+                                <button class="btn btn-primary" id="btnStartCamera">🎥 Bật Camera</button>
+                                <button class="btn btn-success" id="btnCapture" style="display: none;">📸 Chụp Ảnh</button>
+                                <button class="btn btn-secondary" id="btnStopCamera" style="display: none;">⏹ Tắt Camera</button>
+                            </div>
+                        </div>
+
+                        <!-- Captured Preview -->
+                        <div id="capturedPreview" class="image-preview" style="display: none;">
+                            <img id="capturedImg" src="" alt="Captured">
+                            <button class="btn-remove" id="btnRemoveCaptured">✖ Chụp lại</button>
+                        </div>
                     </div>
 
                     <!-- Custom Answer Key -->
