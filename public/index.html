@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📝 Hệ Thống Chấm Phiếu Trắc Nghiệm OMR</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>📝 Hệ Thống Chấm Phiếu Trắc Nghiệm</h1>
+            <p class="subtitle">Hỗ trợ 4 mã đề: 101, 102, 103, 104 | Tự động nhận diện và chấm điểm</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload Section -->
+            <section class="upload-section">
+                <div class="card">
+                    <h2>📤 Upload Phiếu Trắc Nghiệm</h2>
+                    
+                    <div class="upload-area" id="uploadArea">
+                        <input type="file" id="fileInput" accept="image/jpeg,image/jpg,image/png" hidden>
+                        <div class="upload-content">
+                            <div class="upload-icon">📷</div>
+                            <p class="upload-text">Kéo thả ảnh vào đây hoặc click để chọn file</p>
+                            <p class="upload-hint">Chấp nhận: JPG, JPEG, PNG (tối đa 10MB)</p>
+                        </div>
+                    </div>
+
+                    <!-- Preview Image -->
+                    <div id="imagePreview" class="image-preview" style="display: none;">
+                        <img id="previewImg" src="" alt="Preview">
+                        <button class="btn-remove" id="btnRemove">✖ Xóa ảnh</button>
+                    </div>
+
+                    <!-- Custom Answer Key -->
+                    <div class="custom-answer-section">
+                        <details>
+                            <summary>📋 Nhập đáp án tùy chỉnh (tùy chọn)</summary>
+                            <div class="custom-answer-content">
+                                <textarea 
+                                    id="customAnswerKey" 
+                                    rows="3" 
+                                    placeholder="Nhập 35 đáp án, cách nhau bởi dấu phẩy. Ví dụ: A,B,C,D,A,B,C,D,..."
+                                ></textarea>
+                                <p class="hint">💡 Nếu không nhập, hệ thống sẽ tự động chọn đáp án theo mã đề</p>
+                            </div>
+                        </details>
+                    </div>
+
+                    <!-- Process Button -->
+                    <button class="btn-primary" id="btnProcess" disabled>
+                        🎯 Chấm Điểm
+                    </button>
+
+                    <!-- Loading -->
+                    <div id="loading" class="loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Đang xử lý phiếu trắc nghiệm...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <div class="card">
+                    <h2>✅ Kết Quả Chấm Điểm</h2>
+                    
+                    <!-- Images Grid -->
+                    <div class="images-grid-three">
+                        <div class="image-card">
+                            <h3>📷 Ảnh Gốc</h3>
+                            <img id="originalImage" src="" alt="Original">
+                        </div>
+                        <div class="image-card">
+                            <h3>🔍 Vùng Detect</h3>
+                            <img id="debugImage" src="" alt="Debug">
+                            <p class="image-caption">
+                                🔵 Mã đề | 🟢 Q1-10 | 🟡 Q11-20 | 🟣 Q21-30 | 🟠 Q31-40
+                            </p>
+                        </div>
+                        <div class="image-card">
+                            <h3>✅ Kết Quả Chấm</h3>
+                            <img id="resultImage" src="" alt="Result">
+                            <p class="image-caption">
+                                🟢 Đúng | 🔴 Sai | 🟡 Đáp án đúng | 🟠 Tô nhiều
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Summary Stats -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">📝</div>
+                            <div class="stat-content">
+                                <div class="stat-label">Mã đề</div>
+                                <div class="stat-value" id="statMaDe">-</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">✓</div>
+                            <div class="stat-content">
+                                <div class="stat-label">Số câu đúng</div>
+                                <div class="stat-value" id="statCorrect">-</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">📊</div>
+                            <div class="stat-content">
+                                <div class="stat-label">Điểm số</div>
+                                <div class="stat-value" id="statScore">-</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">🏆</div>
+                            <div class="stat-content">
+                                <div class="stat-label">Xếp loại</div>
+                                <div class="stat-value" id="statGrade">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">0%</div>
+                    </div>
+
+                    <!-- Warning for multiple marks -->
+                    <div id="warningMultiple" class="alert alert-warning" style="display: none;">
+                        ⚠️ <strong>Cảnh báo:</strong> Có <span id="multipleCount">0</span> câu tô nhiều đáp án: <span id="multipleList"></span>
+                    </div>
+
+                    <!-- Details Table -->
+                    <details open>
+                        <summary>📋 Chi tiết từng câu</summary>
+                        <div class="details-grid" id="detailsGrid">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </details>
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <button class="btn-secondary" id="btnNew">📤 Chấm phiếu khác</button>
+                        <button class="btn-secondary" id="btnPrint">🖨️ In kết quả</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Error Section -->
+            <section class="error-section" id="errorSection" style="display: none;">
+                <div class="card error-card">
+                    <h2>❌ Lỗi</h2>
+                    <p id="errorMessage"></p>
+                    <button class="btn-secondary" id="btnRetry">🔄 Thử lại</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>💡 <strong>Hướng dẫn:</strong> Chụp phiếu rõ ràng, góc thẳng (&lt;30°), ánh sáng tốt. Tô rõ mã đề và chỉ tô 1 đáp án/câu.</p>
+                <p class="footer-meta">OMR Sheet Evaluation System v2.0 | Hỗ trợ 4 mã đề | © 2026</p>
+            </div>
+        </footer>
+
+        <!-- Info Panel -->
+        <aside class="info-panel">
+            <h3>📚 Thông Tin Mã Đề</h3>
+            <div class="info-content">
+                <p><strong>Mã đề 101:</strong> A=9, B=9, C=5, D=12</p>
+                <p><strong>Mã đề 102:</strong> A=10, B=9, C=6, D=10</p>
+                <p><strong>Mã đề 103:</strong> A=10, B=4, C=12, D=9</p>
+                <p><strong>Mã đề 104:</strong> A=11, B=7, C=7, D=10</p>
+            </div>
+            <div class="info-tips">
+                <h4>💡 Mẹo Chụp Ảnh Tốt:</h4>
+                <ul>
+                    <li>✓ Khoảng cách 30-40cm</li>
+                    <li>✓ Ánh sáng từ trên xuống</li>
+                    <li>✓ Góc thẳng hoặc lệch &lt;20°</li>
+                    <li>✓ Toàn bộ phiếu trong khung</li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
+

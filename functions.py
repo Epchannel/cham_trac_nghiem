@@ -324,7 +324,7 @@ QUESTIONS_31_40 = {
     'x_start': 0.649,
     'x_end': 0.813,
     'y_start': 0.631,
-    'y_end': 0.946
+    'y_end': 0.788
 }
 
 
@@ -348,7 +348,7 @@ def draw_debug_regions(img):
         (QUESTIONS_1_10, (0, 255, 0), "Q1-10"),
         (QUESTIONS_11_20, (0, 255, 255), "Q11-20"),
         (QUESTIONS_21_30, (255, 0, 255), "Q21-30"),
-        (QUESTIONS_31_40, (0, 165, 255), "Q31-40"),
+        (QUESTIONS_31_40, (0, 165, 255), "Q31-35"),
     ]
     
     for region, color, label in regions:
@@ -486,7 +486,7 @@ def read_answer_block(img, region, num_questions, num_choices):
 
 
 def read_answers(img, total_questions=35, choices=4, questions_per_col=10):
-    """Đọc câu trả lời từ phiếu"""
+    """Đọc câu trả lời từ phiếu và trả về cả answers và multiple_marks"""
     answers = []
     multiple_marks = []
     
@@ -505,7 +505,8 @@ def read_answers(img, total_questions=35, choices=4, questions_per_col=10):
     multiple_marks.extend([m + 20 for m in multiple_21_30])  # Offset câu hỏi
     print(f"Q21-30: {answers_21_30}")
     
-    answers_31_40, multiple_31_40 = read_answer_block(img, QUESTIONS_31_40, 10, choices)
+    # Vùng Q31-35 đã thu gọn chỉ còn 5 rows (thay vì 10)
+    answers_31_40, multiple_31_40 = read_answer_block(img, QUESTIONS_31_40, 5, choices)
     remaining = total_questions - 30
     if remaining > 0:
         answers.extend(answers_31_40[:remaining])
